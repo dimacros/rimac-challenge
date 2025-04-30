@@ -1,0 +1,144 @@
+org: dimacros
+service: medical-center-service
+
+stages:
+  dev:
+    name: dev
+    region: us-east-1
+  prod:
+    name: prod
+    region: us-east-1
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'dev'}
+  runtime: nodejs20.x
+  tags:
+    framework: serverless
+    project: rimac-challenge
+
+functions:
+  getAppointments:
+    handler: src/appointments/handler.getAppointments
+    events:
+      - httpApi: "GET /appointments"
+
+  createAppointments:
+    handler: src/appointments/handler.createAppointment
+    environment:
+      PERUVIAN_APPOINTMENT_TOPIC_ARN:
+        Ref: PeruvianAppointmentTopic
+    events:
+      - httpApi: "POST /appointments"
+
+  bookPeruvianAppointment:
+    handler: src/appointments/handler.bookPeruvianAppointment
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - BookPeruvianAppointmentQueue
+              - Arn
+
+  bookChileanAppointment:
+    handler: src/appointments/handler.bookChileanAppointment
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - BookChileanAppointmentQueue
+              - Arn
+
+  completeAppointment:
+    handler: src/appointments/handler.completeAppointment
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - CompleteAppointmentQueue
+              - Arn
+resources:
+  Resources:
+    AppointmentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${sls:stage}-appointments
+        AttributeDefinitions:
+          - AttributeName: scheduleId
+            AttributeType: N
+          - AttributeName: countryISO
+            AttributeType: S
+        KeySchema:
+          - AttributeName: scheduleId
+            KeyType: HASH
+          - AttributeName: countryISO
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+    PeruvianAppointmentTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${sls:stage}-sns-pe-appointment-created
+
+    BookPeruvianAppointmentQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}-sqs-pe-book-appointment-queue
+
+    PeruvianAppointmentSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn:
+          Ref: PeruvianAppointmentTopic
+        Protocol: sqs
+        Endpoint:
+          Fn::GetAtt:
+            - BookPeruvianAppointmentQueue
+            - Arn
+
+    ChileanAppointmentTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:service}-${sls:stage}-sns-cl-appointment-created
+
+    BookChileanAppointmentQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}-sqs-cl-book-appointment-queue
+
+    ChileanAppointmentSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        TopicArn:
+          Ref: ChileanAppointmentTopic
+        Protocol: sqs
+        Endpoint:
+          Fn::GetAtt:
+            - BookChileanAppointmentQueue
+            - Arn
+
+    CompleteAppointmentQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-${sls:stage}-sqs-complete-appointment-queue
+
+    AppointmentBookedRule:
+      Type: AWS::Events::Rule
+      Properties:
+        Name: ${self:service}-${sls:stage}-appointment-booked-rule
+        EventPattern:
+          source:
+            - ${self:service}-${sls:stage}
+          detail-type: ["appointmentBooked"]
+          resources:
+            - Ref: PeruvianAppointmentTopic
+            - Ref: ChileanAppointmentTopic
+        Targets:
+          - Arn:
+              Fn::GetAtt:
+                - CompleteAppointmentQueue
+                - Arn
+            Id: CompleteAppointmentTarget
+        State: ENABLED
