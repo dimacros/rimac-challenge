@@ -1,0 +1,39 @@
+Resources:
+  CompleteAppointmentQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${sls:stage}-sqs-complete-appointment-queue
+
+  CompleteAppointmentQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: CompleteAppointmentQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource:
+              Fn::GetAtt:
+                - CompleteAppointmentQueue
+                - Arn
+
+  AppointmentBookedRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: ${self:service}-${sls:stage}-appointment-booked-rule
+      EventPattern:
+        source:
+          - ${self:service}-${sls:stage}
+        detail-type: ["appointmentBooked"]
+      Targets:
+        - Arn:
+            Fn::GetAtt:
+              - CompleteAppointmentQueue
+              - Arn
+          Id: CompleteAppointmentTarget
+      State: ENABLED

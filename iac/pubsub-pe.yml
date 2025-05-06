@@ -1,0 +1,44 @@
+Resources:
+  PeruvianAppointmentTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ${self:service}-${sls:stage}-sns-pe-appointment-created
+      TracingConfig: Active
+
+  BookPeruvianAppointmentQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${sls:stage}-sqs-pe-book-appointment-queue
+
+  BookPeruvianAppointmentQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: BookPeruvianAppointmentQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource:
+              Fn::GetAtt:
+                - BookPeruvianAppointmentQueue
+                - Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: PeruvianAppointmentTopic
+
+  PeruvianAppointmentSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn:
+        Ref: PeruvianAppointmentTopic
+      Protocol: sqs
+      Endpoint:
+        Fn::GetAtt:
+          - BookPeruvianAppointmentQueue
+          - Arn

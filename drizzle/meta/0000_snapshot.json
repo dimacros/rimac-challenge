@@ -1,0 +1,510 @@
+{
+  "id": "d31ee79d-b1e9-4747-af81-c84ea2e087d0",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.hc_appointments": {
+      "name": "hc_appointments",
+      "schema": "",
+      "columns": {
+        "appointment_id": {
+          "name": "appointment_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "schedule_id": {
+          "name": "schedule_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "insured_id": {
+          "name": "insured_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hc_appointments_schedule_id_hc_doctor_schedules_doctor_schedule_id_fk": {
+          "name": "hc_appointments_schedule_id_hc_doctor_schedules_doctor_schedule_id_fk",
+          "tableFrom": "hc_appointments",
+          "tableTo": "hc_doctor_schedules",
+          "columnsFrom": [
+            "schedule_id"
+          ],
+          "columnsTo": [
+            "doctor_schedule_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hc_appointments_insured_id_hc_insureds_insured_id_fk": {
+          "name": "hc_appointments_insured_id_hc_insureds_insured_id_fk",
+          "tableFrom": "hc_appointments",
+          "tableTo": "hc_insureds",
+          "columnsFrom": [
+            "insured_id"
+          ],
+          "columnsTo": [
+            "insured_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hc_appointments_schedule_id_unique": {
+          "name": "hc_appointments_schedule_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "schedule_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_doctor_schedules": {
+      "name": "hc_doctor_schedules",
+      "schema": "",
+      "columns": {
+        "doctor_schedule_id": {
+          "name": "doctor_schedule_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "center_id": {
+          "name": "center_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialty_id": {
+          "name": "specialty_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_time": {
+          "name": "end_time",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hc_doctor_schedules_center_id_hc_medical_centers_center_id_fk": {
+          "name": "hc_doctor_schedules_center_id_hc_medical_centers_center_id_fk",
+          "tableFrom": "hc_doctor_schedules",
+          "tableTo": "hc_medical_centers",
+          "columnsFrom": [
+            "center_id"
+          ],
+          "columnsTo": [
+            "center_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hc_doctor_schedules_specialty_id_hc_specialties_specialty_id_fk": {
+          "name": "hc_doctor_schedules_specialty_id_hc_specialties_specialty_id_fk",
+          "tableFrom": "hc_doctor_schedules",
+          "tableTo": "hc_specialties",
+          "columnsFrom": [
+            "specialty_id"
+          ],
+          "columnsTo": [
+            "specialty_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hc_doctor_schedules_doctor_id_hc_doctors_doctor_id_fk": {
+          "name": "hc_doctor_schedules_doctor_id_hc_doctors_doctor_id_fk",
+          "tableFrom": "hc_doctor_schedules",
+          "tableTo": "hc_doctors",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "doctor_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_doctor_specialties": {
+      "name": "hc_doctor_specialties",
+      "schema": "",
+      "columns": {
+        "doctor_specialty_id": {
+          "name": "doctor_specialty_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "center_id": {
+          "name": "center_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialty_id": {
+          "name": "specialty_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "hc_doctor_specialties_doctor_id_hc_doctors_doctor_id_fk": {
+          "name": "hc_doctor_specialties_doctor_id_hc_doctors_doctor_id_fk",
+          "tableFrom": "hc_doctor_specialties",
+          "tableTo": "hc_doctors",
+          "columnsFrom": [
+            "doctor_id"
+          ],
+          "columnsTo": [
+            "doctor_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hc_doctor_specialties_center_id_hc_medical_centers_center_id_fk": {
+          "name": "hc_doctor_specialties_center_id_hc_medical_centers_center_id_fk",
+          "tableFrom": "hc_doctor_specialties",
+          "tableTo": "hc_medical_centers",
+          "columnsFrom": [
+            "center_id"
+          ],
+          "columnsTo": [
+            "center_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "hc_doctor_specialties_specialty_id_hc_specialties_specialty_id_fk": {
+          "name": "hc_doctor_specialties_specialty_id_hc_specialties_specialty_id_fk",
+          "tableFrom": "hc_doctor_specialties",
+          "tableTo": "hc_specialties",
+          "columnsFrom": [
+            "specialty_id"
+          ],
+          "columnsTo": [
+            "specialty_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_doctors": {
+      "name": "hc_doctors",
+      "schema": "",
+      "columns": {
+        "doctor_id": {
+          "name": "doctor_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_insureds": {
+      "name": "hc_insureds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "insured_id": {
+          "name": "insured_id",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone_number": {
+          "name": "phone_number",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brithdate": {
+          "name": "brithdate",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "hc_insureds_insured_id_unique": {
+          "name": "hc_insureds_insured_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "insured_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_medical_centers": {
+      "name": "hc_medical_centers",
+      "schema": "",
+      "columns": {
+        "center_id": {
+          "name": "center_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "address": {
+          "name": "address",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(20)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.hc_specialties": {
+      "name": "hc_specialties",
+      "schema": "",
+      "columns": {
+        "specialty_id": {
+          "name": "specialty_id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

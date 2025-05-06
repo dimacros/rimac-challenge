@@ -1,0 +1,30 @@
+Resources:
+  AppointmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: ${self:service}-${sls:stage}-appointments
+      AttributeDefinitions:
+        - AttributeName: scheduleId
+          AttributeType: N
+        - AttributeName: countryISO
+          AttributeType: S
+        - AttributeName: insuredId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: scheduleId
+          KeyType: HASH
+        - AttributeName: countryISO
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: InsuredIdIndex
+          KeySchema:
+            - AttributeName: insuredId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1

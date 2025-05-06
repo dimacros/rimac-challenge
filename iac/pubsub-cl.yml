@@ -1,0 +1,44 @@
+Resources:
+  ChileanAppointmentTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ${self:service}-${sls:stage}-sns-cl-appointment-created
+      TracingConfig: Active
+
+  BookChileanAppointmentQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-${sls:stage}-sqs-cl-book-appointment-queue
+
+  BookChileanAppointmentQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - Ref: BookChileanAppointmentQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - sqs:SendMessage
+            Resource:
+              Fn::GetAtt:
+                - BookChileanAppointmentQueue
+                - Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn:
+                  Ref: ChileanAppointmentTopic
+
+  ChileanAppointmentSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn:
+        Ref: ChileanAppointmentTopic
+      Protocol: sqs
+      Endpoint:
+        Fn::GetAtt:
+          - BookChileanAppointmentQueue
+          - Arn

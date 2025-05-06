@@ -4,18 +4,31 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "serverless package",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:migrate:cl": "drizzle-kit --config drizzle-cl.config.ts migrate",
+    "db:migrate:pe": "drizzle-kit --config drizzle-pe.config.ts migrate",
+    "db:seed": "tsx drizzle/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
   "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.799.0",
     "@aws-sdk/client-eventbridge": "^3.799.0",
     "@aws-sdk/client-sns": "^3.799.0",
     "@types/aws-lambda": "^8.10.149",
     "@types/node": "^22.15.3",
-    "serverless-plugin-typescript": "^2.1.5",
+    "@types/pg": "^8.11.14",
+    "dotenv": "^16.5.0",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.43.1",
+    "drizzle-zod": "^0.7.1",
+    "pg": "^8.15.6",
+    "zod": "^3.24.3"
   }
 }

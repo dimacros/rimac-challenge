@@ -1,13 +1,25 @@
 org: dimacros
+frameworkVersion: "4"
 service: medical-center-service
 
 stages:
   dev:
     name: dev
     region: us-east-1
+    params:
+      DATABASE_PE_CONNECTION_STRING: ${env:DATABASE_PE_CONNECTION_STRING}
+      DATABASE_CL_CONNECTION_STRING: ${env:DATABASE_CL_CONNECTION_STRING}
+      EVENT_BRIDGE_SOURCE_NAME: ${self:service}-${sls:stage}
+      DYNAMODB_TABLE_APPOINTMENTS:
+        Ref: AppointmentsTable
+      SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED:
+        Ref: PeruvianAppointmentTopic
+      SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED:
+        Ref: ChileanAppointmentTopic
   prod:
     name: prod
     region: us-east-1
+    params:
 
 provider:
   name: aws
@@ -16,23 +28,73 @@ provider:
   tags:
     framework: serverless
     project: rimac-challenge
+  tracing:
+    lambda: true
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:Scan
+            - dynamodb:UpdateItem
+            - dynamodb:Query
+          Resource:
+            - Fn::GetAtt:
+                - AppointmentsTable
+                - Arn
+            - Fn::Join:
+                - "/"
+                - - Fn::GetAtt: [AppointmentsTable, Arn]
+                  - "index"
+                  - "*"
+        - Effect: Allow
+          Action:
+            - sns:Publish
+            - sns:Subscribe
+            - sns:Receive
+            - sns:ListSubscriptions
+            - sns:ListSubscriptionsByTopic
+          Resource:
+            - Ref: PeruvianAppointmentTopic
+            - Ref: ChileanAppointmentTopic
+        - Effect: Allow
+          Action:
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - Fn::GetAtt:
+                - BookPeruvianAppointmentQueue
+                - Arn
+            - Fn::GetAtt:
+                - BookChileanAppointmentQueue
+                - Arn
+        - Effect: Allow
+          Action:
+            - events:PutEvents
+          Resource:
+            - arn:aws:events:${aws:region}:${aws:accountId}:event-bus/default
 
 functions:
-  getAppointments:
-    handler: src/appointments/handler.getAppointments
-    events:
-      - httpApi: "GET /appointments"
-
-  createAppointments:
-    handler: src/appointments/handler.createAppointment
+  appointmentRootSchema:
+    handler: src/server/getRootSchema.handler
     environment:
-      PERUVIAN_APPOINTMENT_TOPIC_ARN:
-        Ref: PeruvianAppointmentTopic
+      DATABASE_CL_CONNECTION_STRING: ${param:DATABASE_CL_CONNECTION_STRING}
+      DATABASE_PE_CONNECTION_STRING: ${param:DATABASE_PE_CONNECTION_STRING}
     events:
-      - httpApi: "POST /appointments"
-
+      - httpApi: "GET /"
   bookPeruvianAppointment:
-    handler: src/appointments/handler.bookPeruvianAppointment
+    handler: src/server/pe/bookAppointment.handler
+    environment:
+      DATABASE_CL_CONNECTION_STRING: ${param:DATABASE_CL_CONNECTION_STRING}
+      DATABASE_PE_CONNECTION_STRING: ${param:DATABASE_PE_CONNECTION_STRING}
+      DYNAMODB_TABLE_APPOINTMENTS: ${param:DYNAMODB_TABLE_APPOINTMENTS}
+      SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED}
+      SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED}
+      EVENTBRIDGE_SOURCE_APPOINTMENT_SERVICE: ${param:EVENT_BRIDGE_SOURCE_NAME}
     events:
       - sqs:
           arn:
@@ -41,7 +103,14 @@ functions:
               - Arn
 
   bookChileanAppointment:
-    handler: src/appointments/handler.bookChileanAppointment
+    handler: src/server/cl/bookAppointment.handler
+    environment:
+      DATABASE_CL_CONNECTION_STRING: ${param:DATABASE_CL_CONNECTION_STRING}
+      DATABASE_PE_CONNECTION_STRING: ${param:DATABASE_PE_CONNECTION_STRING}
+      DYNAMODB_TABLE_APPOINTMENTS: ${param:DYNAMODB_TABLE_APPOINTMENTS}
+      SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED}
+      SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED}
+      EVENTBRIDGE_SOURCE_APPOINTMENT_SERVICE: ${param:EVENT_BRIDGE_SOURCE_NAME}
     events:
       - sqs:
           arn:
@@ -49,96 +118,41 @@ functions:
               - BookChileanAppointmentQueue
               - Arn
 
+  createAppointment:
+    handler: src/server/createAppointment.handler
+    environment:
+      DYNAMODB_TABLE_APPOINTMENTS: ${param:DYNAMODB_TABLE_APPOINTMENTS}
+      SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_PERUVIAN_APPOINTMENT_CREATED}
+      SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED: ${param:SNS_TOPIC_CHILEAN_APPOINTMENT_CREATED}
+    events:
+      - httpApi: "POST /appointments"
+
+  getAppointments:
+    handler: src/server/getAppointments.handler
+    environment:
+      DATABASE_CL_CONNECTION_STRING: ${param:DATABASE_CL_CONNECTION_STRING}
+      DATABASE_PE_CONNECTION_STRING: ${param:DATABASE_PE_CONNECTION_STRING}
+      DYNAMODB_TABLE_APPOINTMENTS: ${param:DYNAMODB_TABLE_APPOINTMENTS}
+
+    events:
+      - httpApi: "GET /appointments"
+
   completeAppointment:
-    handler: src/appointments/handler.completeAppointment
+    handler: src/server/completeAppointment.handler
+    environment:
+      DYNAMODB_TABLE_APPOINTMENTS: ${param:DYNAMODB_TABLE_APPOINTMENTS}
     events:
       - sqs:
           arn:
             Fn::GetAtt:
               - CompleteAppointmentQueue
               - Arn
+
 resources:
-  Resources:
-    AppointmentsTable:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: ${self:service}-${sls:stage}-appointments
-        AttributeDefinitions:
-          - AttributeName: scheduleId
-            AttributeType: N
-          - AttributeName: countryISO
-            AttributeType: S
-        KeySchema:
-          - AttributeName: scheduleId
-            KeyType: HASH
-          - AttributeName: countryISO
-            KeyType: RANGE
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
+  - ${file(iac/dynamodb.yml)}
+  - ${file(iac/pubsub-pe.yml)}
+  - ${file(iac/pubsub-cl.yml)}
+  - ${file(iac/event-bridge.yml)}
 
-    PeruvianAppointmentTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${sls:stage}-sns-pe-appointment-created
-
-    BookPeruvianAppointmentQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${sls:stage}-sqs-pe-book-appointment-queue
-
-    PeruvianAppointmentSubscription:
-      Type: AWS::SNS::Subscription
-      Properties:
-        TopicArn:
-          Ref: PeruvianAppointmentTopic
-        Protocol: sqs
-        Endpoint:
-          Fn::GetAtt:
-            - BookPeruvianAppointmentQueue
-            - Arn
-
-    ChileanAppointmentTopic:
-      Type: AWS::SNS::Topic
-      Properties:
-        TopicName: ${self:service}-${sls:stage}-sns-cl-appointment-created
-
-    BookChileanAppointmentQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${sls:stage}-sqs-cl-book-appointment-queue
-
-    ChileanAppointmentSubscription:
-      Type: AWS::SNS::Subscription
-      Properties:
-        TopicArn:
-          Ref: ChileanAppointmentTopic
-        Protocol: sqs
-        Endpoint:
-          Fn::GetAtt:
-            - BookChileanAppointmentQueue
-            - Arn
-
-    CompleteAppointmentQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: ${self:service}-${sls:stage}-sqs-complete-appointment-queue
-
-    AppointmentBookedRule:
-      Type: AWS::Events::Rule
-      Properties:
-        Name: ${self:service}-${sls:stage}-appointment-booked-rule
-        EventPattern:
-          source:
-            - ${self:service}-${sls:stage}
-          detail-type: ["appointmentBooked"]
-          resources:
-            - Ref: PeruvianAppointmentTopic
-            - Ref: ChileanAppointmentTopic
-        Targets:
-          - Arn:
-              Fn::GetAtt:
-                - CompleteAppointmentQueue
-                - Arn
-            Id: CompleteAppointmentTarget
-        State: ENABLED
+package:
+  excludeDevDependencies: true
