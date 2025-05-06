@@ -6,6 +6,9 @@ Todos los detalles se pueden ver aquí: [CHALLENGE](./CHALLENGE.md)
 ## Descripción
 Este proyecto es un reto técnico para implementar un sistema de gestión de citas utilizando AWS (DynamoDB, SQS, SNS, EventBridge) y Node.js.
 
+El proyecto fue desplegado a través de serverless y puede probarlo en el siguiente link:
+- https://we4un82hsb.execute-api.us-east-1.amazonaws.com
+
 ## Requisitos
 - Node.js v20.x
 - AWS CLI
