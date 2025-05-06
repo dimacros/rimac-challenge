@@ -1,7 +1,7 @@
 # Reto Técnico Back End
 
 ## Challenge
-Link: [Enlace al desafío](https://example.com)
+Todos los detalles se pueden ver aquí: [CHALLENGE](./CHALLENGE.md)
 
 ## Descripción
 Este proyecto es un reto técnico para implementar un sistema de gestión de citas utilizando AWS (DynamoDB, SQS, SNS, EventBridge) y Node.js.
@@ -12,18 +12,37 @@ Este proyecto es un reto técnico para implementar un sistema de gestión de cit
 - Serverless Framework
 
 ## Configuración
-1. Configurar el aws profile que usarás con serverless: [Docs](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
-2. Clonar el repositorio: `git clone https://github.com/dimacros/rimac-challenge`
-3. Instalar las dependencias: `npm install`
-4. Configurar las variables de entorno: `cp .env.example .env`
-5. Migrar las base de datos:
-  ```bash
-  npm run db:migrate:cl && npm run db:migrate:pe
+1. Configurar el aws profile que usarás con serverless: [AWS DOCS](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-profiles.html)
 
+2. Clonar el repositorio:
+  ```bash
+  git clone https://github.com/dimacros/rimac-challenge
+  ```
+
+3. Instalar las dependencias:
+  ```npm
+  npm install
+  ```
+
+4. Configurar las variables de entorno (Coloque las DB credentials):
+  ```bash
+  cp .env.example .env
+  ```
+
+5. Migrar las base de datos:
+  ```npm
+  npm run db:migrate:cl && npm run db:migrate:pe
+  ```
+
+  Insertar los datos de prueba
+  ```npm
   npm run db:seed
   ```
 
-6. Desplegar serverless: `npx serverless --aws-profile {your_account} deploy`
+6. Desplegar serverless:
+  ```bash
+  npx serverless --aws-profile {your_account} deploy
+  ```
 
 7. Revisar datos disponibles:
   ```bash
@@ -83,7 +102,7 @@ Este proyecto es un reto técnico para implementar un sistema de gestión de cit
       },
     }
   ```
-8. Crear un appointment usando los ids de los datos disponibles:
+8. Crear un appointment con los datos disponibles:
 
   ```bash
   curl --location 'https://we4un82hsb.execute-api.us-east-1.amazonaws.com/appointments' \
